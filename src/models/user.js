@@ -1,4 +1,7 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken"); // Add this at the top
+
 
 const userSchema = new mongoose.Schema(
   {
@@ -34,7 +37,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
       required: true,
       lowercase: true,
-      immutable: true,
+      // immutable: true,
       match: [/\S+@\S+\.\S+/, "Invalid email address"],
     },
     age: {
@@ -64,6 +67,23 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+userSchema.methods.getJWT = async function () {
+  const userData = this;
+    const token = jwt.sign({ _id: userData._id }, "DEVTINDER@123$", {
+        expiresIn: "1d",
+    });
+  return token;
+}
+userSchema.methods.validatePassword = async function (comparepasswordInputUser) {
+  const user = this;
+  const passwordHash = user.password
+  const passwordValid = await bcrypt.compare(comparepasswordInputUser, passwordHash)
+  return passwordValid;
+}
+
+
+
 
 // Middleware to adjust 'updatedAt' to IST (UTC +5:30)
 const applyISTOffset = function (next) {

@@ -1,7 +1,7 @@
 const validateSignupData = (req) => {
   const { name, email, age, gender, password } = req.body;
-    if (!name) {
-        throw new Error("Please enter your name");
+  if (!name) {
+    throw new Error("Please enter your name");
   }
   if (!/^[A-Za-z\s]+$/.test(name)) {
     throw new Error("Name must contain only letters and spaces.");
@@ -32,4 +32,28 @@ const validateSignupData = (req) => {
   }
 };
 
-module.exports = { validateSignupData };
+//Edit validation
+
+const validateEditData = (existingUser, updateData) => {
+  if (!existingUser) {
+    return res.status(404).send("User not found.");
+  }
+  if (!/^[A-Za-z\s]+$/.test(updateData.name)) {
+    throw new Error("Name must contain only letters and spaces.");
+  }
+
+  if (updateData.email && updateData.email !== existingUser.email) {
+    throw new Error("Email cannot be changed once set.");
+  }
+
+  const age = Number(updateData.age);
+  if (isNaN(age)) {
+    throw new Error("Please enter a numeric age.");
+  }
+
+  if (age < 0 || age > 120) {
+    throw new Error("Please enter a valid age between 0 and 120.");
+  }
+};
+
+module.exports = { validateSignupData, validateEditData };
