@@ -24,8 +24,12 @@ const connectionRequestSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// connectionRequestSchema.index({name:1}) index configration
+
 const ConnectionRequestModel = new mongoose.model(
   "ConnectionRequest",
   connectionRequestSchema
 );
 module.exports = ConnectionRequestModel;
+
+
