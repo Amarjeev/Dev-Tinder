@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken"); // Add this at the top
 
-
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -13,9 +12,15 @@ const userSchema = new mongoose.Schema(
       maxlength: 15,
       validate(value) {
         if (!/^[A-Za-z\s]+$/.test(value)) {
-          throw new Error("Name must not contain numbers or special characters");
+          throw new Error(
+            "Name must not contain numbers or special characters"
+          );
         }
       },
+    },
+    friendname: {
+      type: String,
+      trim: true,
     },
     password: {
       type: String,
@@ -28,7 +33,9 @@ const userSchema = new mongoose.Schema(
           !/[0-9]/.test(value) ||
           !/[!@#$%^&*(),.?":{}|<>]/.test(value)
         ) {
-          throw new Error("Password must include uppercase, lowercase, number, and special character");
+          throw new Error(
+            "Password must include uppercase, lowercase, number, and special character"
+          );
         }
       },
     },
@@ -60,7 +67,8 @@ const userSchema = new mongoose.Schema(
     },
     photoUrl: {
       type: String,
-      default: "https://png.pngtree.com/png-clipart/20230927/original/pngtree-man-avatar-image-for-profile-png-image_13001877.png",
+      default:
+       "https://static.vecteezy.com/system/resources/previews/036/594/092/original/man-empty-avatar-photo-placeholder-for-social-networks-resumes-forums-and-dating-sites-male-and-female-no-photo-images-for-unfilled-user-profile-free-vector.jpg",
     },
   },
   {
@@ -70,20 +78,22 @@ const userSchema = new mongoose.Schema(
 
 userSchema.methods.getJWT = async function () {
   const userData = this;
-    const token = jwt.sign({ _id: userData._id }, "DEVTINDER@123$", {
-        expiresIn: "1d",
-    });
+  const token = jwt.sign({ _id: userData._id }, "DEVTINDER@123$", {
+    expiresIn: "1d",
+  });
   return token;
-}
-userSchema.methods.validatePassword = async function (comparepasswordInputUser) {
+};
+userSchema.methods.validatePassword = async function (
+  comparepasswordInputUser
+) {
   const user = this;
-  const passwordHash = user.password
-  const passwordValid = await bcrypt.compare(comparepasswordInputUser, passwordHash)
+  const passwordHash = user.password;
+  const passwordValid = await bcrypt.compare(
+    comparepasswordInputUser,
+    passwordHash
+  );
   return passwordValid;
-}
-
-
-
+};
 
 // Middleware to adjust 'updatedAt' to IST (UTC +5:30)
 const applyISTOffset = function (next) {
