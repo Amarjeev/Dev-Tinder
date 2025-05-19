@@ -1,5 +1,7 @@
+require('dotenv').config(); // Must be first!
 const express = require("express");
 const cookieParser = require("cookie-parser");
+const bodyParser=require('body-parser')
 const connectDB = require("./config/database");
 const cors = require('cors');
 
@@ -14,8 +16,8 @@ const reqIntrestedRoutes = require("./routes/reqIntereted");
 const reqAccepted = require("./routes/reqAccepted");
 const friendRequests = require("./routes/requests");
 const feedreqRoutes = require("./routes/reqfeed");
-// const feedRoutes = require("./routes/feed");
-const feedRoutes =require("./routes/feed")
+const feedRoutes = require("./routes/feed")
+const forgotPassword =require("./routes/forgotPassword")
 
 const app = express();
 const PORT = 5000;
@@ -23,6 +25,7 @@ const PORT = 5000;
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
+app.use(bodyParser.json());
 app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true,
@@ -41,6 +44,7 @@ app.use("/", reqAccepted);
 app.use("/", friendRequests);
 app.use("/", feedreqRoutes);
 app.use("/", feedRoutes);
+app.use("/", forgotPassword);
 
 
 // Connect to DB and start server
