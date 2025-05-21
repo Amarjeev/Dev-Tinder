@@ -16,7 +16,7 @@ const forgotPasswordRouter = require("./routes/forgotPassword");
 // const feedRequestRouter = require("./routes/reqfeed");
 const feedRouter = require("./routes/feed");
 const connectionRequestRouter = require("./routes/ConnectionRequest");
-
+const friendslist = require("./routes/Friendslist");
 const app = express();
 const PORT = 5000;
 
@@ -39,6 +39,7 @@ app.use("/", forgotPasswordRouter);
 app.use("/", feedRouter);
 app.use("/", connectionRequestRouter);
 app.use("/", editProfileRouter);
+app.use("/", friendslist);
 
 // ───────────── Connect to Database and Start Server ─────────────
 connectDB().then(() => {
