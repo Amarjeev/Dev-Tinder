@@ -2,29 +2,40 @@
 // 🔌 Import Required Modules
 // ═════════════════════════════════════════════════════════════════════════════
 const express = require("express");
-const Accountlogout = express.Router();
+const editRouter = express.Router();
+const User = require("../models/user"); // Mongoose User model
+const { validateEditData } = require("../Helpers/Validation"); // Custom validation function
 
 // ═════════════════════════════════════════════════════════════════════════════
-// 🔓 Route: POST /logout
-// Purpose: Clear the authentication cookie and log the user out
+// ✏️ Route: PUT /edit/:userId
+// Purpose: Update user profile information
 // ═════════════════════════════════════════════════════════════════════════════
-Accountlogout.post("/logout", (req, res) => {
-  // 🗓️ Optional: Set a short expiration if needed
-  // const expirationTime = new Date(Date.now() + 8000); // 8 seconds (example)
+editRouter.put("/edit/:userId", async (req, res) => {
+  const userId = req.params.userId.trim(); // Get and sanitize userId from params
+  const updateData = req.body; // Incoming data to update
 
-  // ❌ Clear the cookie by setting its expiration in the past
-  res.cookie("token", null, {
-    expires: new Date(0), // Clears the cookie immediately
-    httpOnly: true,       // Recommended for security
-    secure: true,         // Set to true in production with HTTPS
-    sameSite: "strict",   // Prevent CSRF
-  });
+  try {
+    // 🔍 Fetch the existing user by ID
+    const existingUser = await User.findById(userId);
 
-  // ✅ Respond with success message
-  res.send("Logout Successful!!!!");
+    // ✅ Validate the update data using a helper function
+    validateEditData(existingUser, updateData);
+
+    // 🔧 Update user document and return the updated one
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+      new: true, // Return the updated document
+    });
+
+    // ✅ Respond with updated user data
+    return res.status(200).send(updatedUser);
+  } catch (error) {
+    // ❌ Handle and return server-side errors
+    console.error("Error updating user profile:", error);
+    return res.status(500).json({ error: error.message });
+  }
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
 // 🚀 Export the Router
 // ═════════════════════════════════════════════════════════════════════════════
-module.exports = Accountlogout;
+module.exports = editRouter;

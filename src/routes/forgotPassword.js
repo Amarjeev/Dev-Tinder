@@ -1,53 +1,68 @@
-require("dotenv").config(); // Load environment variables
+// ═════════════════════════════════════════════════════════════════════════════
+// 🌱 Load Environment Variables
+// ═════════════════════════════════════════════════════════════════════════════
+require("dotenv").config(); // Load variables from .env (email credentials, etc.)
 
+// ═════════════════════════════════════════════════════════════════════════════
+// 📦 Module Imports
+// ═════════════════════════════════════════════════════════════════════════════
 const express = require("express");
 const nodemailer = require("nodemailer");
 const mongoose = require("mongoose");
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
+
+// ✅ Create a new Express router
 const forgotPassword = express.Router();
 
-// In-memory OTP store (for demo purposes; use a DB or cache in production)
+// ═════════════════════════════════════════════════════════════════════════════
+// 🔒 In-Memory OTP Store (⚠️ Use Redis or DB for production)
+// ═════════════════════════════════════════════════════════════════════════════
 let otpStore = {};
 
-// Function to generate a 6-digit OTP as a string
+// 🔧 Function to generate a 6-digit OTP
 const generateOTP = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
-// ✅ Create transporter AFTER loading env variables
+// ═════════════════════════════════════════════════════════════════════════════
+// ✉️ Configure Nodemailer Transporter (Gmail used here)
+// ═════════════════════════════════════════════════════════════════════════════
 const transporter = nodemailer.createTransport({
-  service: "gmail", // Using Gmail as the email service
+  service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER, // Your email address from env
-    pass: process.env.EMAIL_PASS, // Your email password from env
+    user: process.env.EMAIL_USER, // 📧 Sender email (from .env)
+    pass: process.env.EMAIL_PASS, // 🔑 App password (from .env)
   },
 });
 
-// ✅ Route to handle OTP generation and email sending
+// ═════════════════════════════════════════════════════════════════════════════
+// 🔐 Route: POST /forgot-password
+// Purpose: Send OTP to user's email
+// ═════════════════════════════════════════════════════════════════════════════
 forgotPassword.post("/forgot-password", async (req, res) => {
   const { email } = req.body;
 
-  // Check if user with the given email exists
-  const findUser = await User.findOne({ email });
-  if (!findUser) {
-    return res.status(400).send("email address not valid");
-  }
-
-  // Validate email format
+  // 🛑 Validate email format
   if (!email || !email.includes("@")) {
     return res.status(400).send("Invalid email address");
   }
 
-  // Generate OTP and store it in memory
+  // 🔍 Check if user exists
+  const findUser = await User.findOne({ email });
+  if (!findUser) {
+    return res.status(400).send("Email address not valid");
+  }
+
+  // 🔐 Generate and store OTP
   const otp = generateOTP();
   otpStore[email] = otp;
 
-  // ✅ OTP expires after 10 seconds (for demo; increase in production)
+  // ⏲️ Expire OTP after 10 seconds (⚠️ Increase in production)
   setTimeout(() => {
     delete otpStore[email];
   }, 10 * 1000);
 
-  // Email options configuration
+  // 📧 Email content & styling
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
@@ -67,56 +82,71 @@ forgotPassword.post("/forgot-password", async (req, res) => {
   };
 
   try {
-    // ✅ Send the OTP email
+    // 📤 Send OTP email
     await transporter.sendMail(mailOptions);
     console.log(`OTP sent to ${email}: ${otp}`);
-    res.json(otp); // In production, don’t send OTP back in response
+
+    // ⚠️ In production, never send the OTP in response!
+    res.json(otp);
   } catch (error) {
     console.error("Failed to send email:", error);
     res.status(500).send("Error sending OTP");
   }
 });
 
-// ✅ Route to verify the OTP entered by user
+// ═════════════════════════════════════════════════════════════════════════════
+// ✅ Route: POST /OtpVerification
+// Purpose: Verify the entered OTP
+// ═════════════════════════════════════════════════════════════════════════════
 forgotPassword.post("/OtpVerification", async (req, res) => {
   try {
     const { enteredOtp, Otp } = req.body;
-    console.log(Otp);
 
-    // Simple match check — should be improved for production
+    // ✅ Simple comparison for demo (use better logic in production)
     if (Otp === enteredOtp) {
       res.send("Otp Correct");
     } else {
       res.send("Otp InCorrect");
     }
   } catch (error) {
-    console.error("Failed to send email:", error);
-    res.status(500).send("Error sending OTP");
+    console.error("OTP verification error:", error);
+    res.status(500).send("Server error during OTP verification");
   }
 });
 
-// ✅ Placeholder route for password change (to be implemented)
+// ═════════════════════════════════════════════════════════════════════════════
+// 🔑 Route: POST /PasswordChange
+// Purpose: Change user's password after OTP verification
+// ═════════════════════════════════════════════════════════════════════════════
 forgotPassword.post("/PasswordChange", async (req, res) => {
   try {
     const { email, password } = req.body;
-     if (!email || !password) {
+
+    // 🛑 Validate input
+    if (!email || !password) {
       return res.status(400).send({ message: "Email and password are required." });
     }
-       const user = await User.findOne({ email });
+
+    // 🔍 Check if user exists
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).send({ message: "User not found." });
     }
-      // Hash the password
+
+    // 🔐 Hash the new password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Update the user's password
+    // 💾 Update the password in database
     await User.updateOne({ email }, { password: passwordHash });
 
-    res.status(200).send({ message: "Password changed Success" });
+    res.status(200).send({ message: "Password changed successfully" });
   } catch (error) {
-    console.error("Failed to send email:", error);
-    res.status(500).send("Error sending OTP");
+    console.error("Password change error:", error);
+    res.status(500).send("Server error during password change");
   }
 });
 
+// ═════════════════════════════════════════════════════════════════════════════
+// 🚀 Export the Router
+// ═════════════════════════════════════════════════════════════════════════════
 module.exports = forgotPassword;
