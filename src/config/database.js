@@ -4,10 +4,7 @@ const dbURL = "mongodb://localhost:27017/Devtinder";
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(dbURL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(dbURL);
     console.log("✅ MongoDB Connected");
   } catch (err) {
     console.error("❌ MongoDB Connection Failed:", err.message);
